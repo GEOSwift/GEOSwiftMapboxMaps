@@ -82,4 +82,23 @@ final class GEOSwiftMapboxMapsTests: XCTestCase {
         XCTAssertEqual(geoSwiftLineString.firstPoint.x, turfLineString.coordinates.first?.longitude)
         XCTAssertEqual(geoSwiftLineString.lastPoint.x, turfLineString.coordinates.last?.longitude)
     }
+    
+    func testCreateTurfPolygonFromGEOSwiftPolygon() {
+        let GEOSwiftPolygon = try! Polygon(wkt: "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10), (20 30, 35 35, 30 20, 20 30))")
+        
+        let TurfPolygon = Polygon(polygon: GEOSwiftPolygon)
+        
+        XCTAssertEqual(GEOSwiftPolygon.exterior.points.first?.y, TurfPolygon.outerRing.coordinates.first?.latitude)
+        XCTAssertEqual(GEOSwiftPolygon.holes.first?.points.first?.x, TurfPolygon.innerRings.first?.coordinates.first?.longitude)
+    }
+    
+    func testCreateGEOSwiftPolygonFromTurfPolygon() {
+        let TurfPolygon = Polygon(
+            [[CLLocationCoordinate2D(latitude: 10.0, longitude: 30.0), CLLocationCoordinate2D(latitude: 40.0, longitude: 40.0), CLLocationCoordinate2D(latitude: 40.0, longitude: 20.0), CLLocationCoordinate2D(latitude: 20.0, longitude: 10.0), CLLocationCoordinate2D(latitude: 10.0, longitude: 30.0)], [CLLocationCoordinate2D(latitude: 30.0, longitude: 20.0), CLLocationCoordinate2D(latitude: 35.0, longitude: 35.0), CLLocationCoordinate2D(latitude: 20.0, longitude: 30.0), CLLocationCoordinate2D(latitude: 30.0, longitude: 20.0)]])
+        
+        let GEOSwiftPolygon = try! Polygon(polygon: TurfPolygon)
+        
+        XCTAssertEqual(GEOSwiftPolygon.exterior.points.first?.y, TurfPolygon.outerRing.coordinates.first?.latitude)
+        XCTAssertEqual(GEOSwiftPolygon.holes.first?.points.first?.x, TurfPolygon.innerRings.first?.coordinates.first?.longitude)
+    }
 }
