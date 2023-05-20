@@ -8,6 +8,7 @@ public extension CLLocationCoordinate2D {
     }
 }
 
+// Point
 public extension GEOSwift.Point {
     init(longitude: Double, latitude: Double) {
         self.init(x: longitude, y: latitude)
@@ -18,25 +19,26 @@ public extension GEOSwift.Point {
     }
 }
 
-public extension GEOSwift.Polygon {
-    // swiftlint:disable:next force_try
-    static let world = try! GEOSwift.Polygon(
-        exterior: Polygon.LinearRing(
-            points: [
-                Point(x: -180, y: 90),
-                Point(x: -180, y: -90),
-                Point(x: 180, y: -90),
-                Point(x: 180, y: 90),
-                Point(x: -180, y: 90)]))
-}
-
-public extension PointAnnotation {
-    init(point: GEOSwift.Point) {
-        let coordinate = CLLocationCoordinate2D(point)
-        self.init(coordinate: coordinate)
+// MultiPoint
+public extension Turf.MultiPoint {
+    init(multiPoint: GEOSwift.MultiPoint) {
+        let points = multiPoint.points.map { point in
+            LocationCoordinate2D(latitude: point.y, longitude: point.x)
+        }
+        self.init(points)
     }
 }
 
+public extension GEOSwift.MultiPoint {
+    init(multiPoint: Turf.MultiPoint) {
+        let points = multiPoint.coordinates.map { point in
+            GEOSwift.Point(longitude: point.longitude, latitude: point.latitude)
+        }
+        self.init(points: points)
+    }
+}
+
+// LineString
 public extension Turf.LineString {
     init(lineString: GEOSwift.LineString) {
         let points = lineString.points
@@ -57,6 +59,32 @@ public extension GEOSwift.LineString {
     }
 }
 
+// MultiLineString
+public extension Turf.MultiLineString {
+    init(multiLineString: GEOSwift.MultiLineString) {
+        let locationCordinatesArray = multiLineString.lineStrings.map { lineString in
+            let coordinates = lineString.points.map { point in
+                LocationCoordinate2D(point)
+            }
+            return coordinates
+        }
+        self.init(locationCordinatesArray)
+    }
+}
+
+public extension GEOSwift.MultiLineString {
+    init(multiLineString: Turf.MultiLineString) throws {
+        let lineStringArray = try multiLineString.coordinates.map { coordinates in
+            let points = coordinates.map { coordinate in
+                GEOSwift.Point(coordinate)
+            }
+            return try GEOSwift.LineString(points: points)
+        }
+        self.init(lineStrings: lineStringArray)
+    }
+}
+
+// Polygon
 public extension Turf.Polygon {
     init(polygon: GEOSwift.Polygon) {
         let exteriorPoints = polygon.exterior.points.map { point in
@@ -69,6 +97,12 @@ public extension Turf.Polygon {
             return Ring(coordinates: coordinates)
         }
         self.init(outerRing: Ring(coordinates: exteriorPoints), innerRings: interiorPoints)
+    }
+    init(linerRing: GEOSwift.Polygon.LinearRing) {
+        let coordinates = linerRing.points.map { point in
+            LocationCoordinate2D(point)
+        }
+        self.init([coordinates])
     }
 }
 
@@ -85,4 +119,43 @@ public extension GEOSwift.Polygon {
         }
         self.init(exterior: try LinearRing(points: exteriorPoints), holes: interiorPoints)
     }
+}
+
+// MultiPolygon
+public extension Turf.MultiPolygon {
+    init(polygon: GEOSwift.MultiPolygon) {
+        let geoSwiftMultiPolygon = polygon.polygons.map { polygon in
+            Turf.Polygon(polygon: polygon)
+        }
+        self.init(geoSwiftMultiPolygon)
+    }
+}
+
+public extension GEOSwift.MultiPolygon {
+    init(polygon: Turf.MultiPolygon) throws {
+        let turfMultiPolygon = try polygon.polygons.map { polygon in
+            try GEOSwift.Polygon(polygon: polygon)
+        }
+        self.init(polygons: turfMultiPolygon)
+    }
+}
+
+
+public extension PointAnnotation {
+    init(point: GEOSwift.Point) {
+        let coordinate = CLLocationCoordinate2D(point)
+        self.init(coordinate: coordinate)
+    }
+}
+
+public extension GEOSwift.Polygon {
+    // swiftlint:disable:next force_try
+    static let world = try! GEOSwift.Polygon(
+        exterior: Polygon.LinearRing(
+            points: [
+                Point(x: -180, y: 90),
+                Point(x: -180, y: -90),
+                Point(x: 180, y: -90),
+                Point(x: 180, y: 90),
+                Point(x: -180, y: 90)]))
 }
